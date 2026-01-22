@@ -1,36 +1,32 @@
 import re
-import time
 from typing import List
+
 from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, WebDriverException
-from urllib.parse import urlparse
 
 from .models import Manga, MangaListEntry, MangaList
 
 MANGA_LIST_URL_WITH_PAGE = "https://www.mangago.me/home/mangalist/{manga_list_code}/?filter=&page={page_no}"
 
-def get_manga_list(manga_list_code: int) -> MangaList:
-    try:
-        options = webdriver.ChromeOptions()
-        options.page_load_strategy = "eager"
-        
-        driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(10)
+def get_manga_list_entries(driver: webdriver.Chrome, code: str, page: int) -> List[MangaListEntry]: 
+    url = MANGA_LIST_URL_WITH_PAGE.format(manga_list_code=code, page_no=page)
+    driver.get(url)
+    manga_list_page_soup = BeautifulSoup(driver.page_source, "html.parser")
+    manga_list_entries = parse_manga_list_entries(manga_list_page_soup)
+    return manga_list_entries
 
-        driver.get(MANGA_LIST_URL_WITH_PAGE.format(manga_list_code=manga_list_code, page_no=1))
+def get_manga(driver: webdriver.Chrome, url: str) -> Manga:
+    driver.get(url)
+    manga_soup = BeautifulSoup(driver.page_source, "html.parser")
+    manga = parse_manga(manga_soup)
+    manga.url = url
+    return manga
 
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        manga_list = parse_manga_list(driver, soup, manga_list_code)
+def set_manga_for_manga_list_entry(driver: webdriver.Chrome, manga_list_entry: MangaListEntry):
+    manga = get_manga(driver, manga_list_entry.manga_url)
+    manga_list_entry.manga = manga
 
-        return manga_list
-    finally:
-        driver.quit()
-
-def parse_manga_list(driver: webdriver.Chrome, soup: BeautifulSoup, manga_list_code: int) -> MangaList:
+def parse_manga_list_info(soup: BeautifulSoup):
     # Initialize manga list
     manga_list = MangaList()
 
@@ -40,9 +36,6 @@ def parse_manga_list(driver: webdriver.Chrome, soup: BeautifulSoup, manga_list_c
         h1_div = title_div.find("h1")
         if isinstance(h1_div, Tag):
             manga_list.title = h1_div.get_text(strip=True)
-    
-    # Set url
-    manga_list.url = urlparse(driver.current_url).path
 
     user_profile_div = soup.select_one("div.user-profile")
     if isinstance(user_profile_div, Tag):
@@ -67,23 +60,15 @@ def parse_manga_list(driver: webdriver.Chrome, soup: BeautifulSoup, manga_list_c
             manga_list.tags = [link.get_text(strip=True) for link in tag_links]
 
     # Get pages
-    pages = 1
     pagination_div = soup.select_one("div.pagination")
     if isinstance(pagination_div, Tag):
-        pages = int(pagination_div.get("total"))
-
-    # Traverse each manga list page
-    for page_no in range(1, pages + 1):
-        driver.get(MANGA_LIST_URL_WITH_PAGE.format(manga_list_code=manga_list_code, page_no=page_no))
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        manga_list.entries += parse_manga_list_page(soup)
+        manga_list.pages = int(pagination_div.get("total"))
 
     return manga_list
 
-def parse_manga_list_page(soup: BeautifulSoup) -> List[MangaListEntry]:
+def parse_manga_list_entries(soup: BeautifulSoup):
     manga_list_entries = []
 
-    # Manga List Entries
     manga_divs = soup.select("div.manga.note-and-order")
     for manga_div in manga_divs:
         # Initialize manga list entry
@@ -91,12 +76,12 @@ def parse_manga_list_page(soup: BeautifulSoup) -> List[MangaListEntry]:
 
         manga_link = manga_div.select_one("div.comment").find("a")
         if isinstance(manga_link, Tag):
-            # Set entry title
+            # Set title
             manga_list_entry.title = manga_link.get_text(strip=True)
-            # Set entry url
-            manga_list_entry.url = manga_link.get("href")
+            # Set manga url
+            manga_list_entry.manga_url = manga_link.get("href")
 
-        # Set entry comment
+        # Set comment
         blockquote_div = manga_div.find("blockquote")
         if isinstance(blockquote_div, Tag):
             manga_list_entry.comment = blockquote_div.get_text(separator="\n", strip=True)
@@ -105,56 +90,12 @@ def parse_manga_list_page(soup: BeautifulSoup) -> List[MangaListEntry]:
 
     return manga_list_entries
 
-def get_manga_details(manga_url: str) -> Manga:
-    try:
-        options = webdriver.ChromeOptions()
-        options.page_load_strategy = "eager"
-        
-        driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(10)
-
-        driver.get(manga_url)
-
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        manga = parse_manga_details(soup, manga_url)
-
-        return manga
-    finally:
-        driver.quit()
-
-def get_manga_from_manga_list(manga_list: MangaList) -> List[Manga]:
-    try:
-        options = webdriver.ChromeOptions()
-        options.page_load_strategy = "eager"
-        
-        driver = webdriver.Chrome(options=options)
-        driver.set_page_load_timeout(10)
-
-        mangas = parse_mangas_from_manga_list(driver, manga_list)
-
-        return mangas
-    finally:
-        driver.quit()
-
-def parse_mangas_from_manga_list(driver: webdriver.Chrome, manga_list: MangaList) -> MangaList:
-    for index in range(len(manga_list.entries)):
-        manga_url = manga_list.entries[index].url
-        driver.get(manga_url)
-        soup = BeautifulSoup(driver.page_source, "html.parser")
-        manga = parse_manga_details(soup, manga_url)
-        manga_list.entries[index].manga = manga
-
-    return manga_list
-
-def parse_manga_details(soup: BeautifulSoup, manga_url: str) -> Manga:
-    # Initialize Manga
+def parse_manga(soup: BeautifulSoup):
+    # Initialize manga
     manga = Manga()
 
     # Set title
     manga.title = (title_elem.get_text(strip=True) if (title_elem := soup.find("h1")) else "Unknown Title")
-
-    # Set url
-    manga.url = manga_url
 
     # Set cover url
     cover_div = soup.select_one("div.left.cover")
@@ -176,8 +117,14 @@ def parse_manga_details(soup: BeautifulSoup, manga_url: str) -> Manga:
 
             label_text = label_tag.get_text(strip=True)
             
+            # Set status
+            if "Status:" in label_text:
+                span_tag = label_tag.find_next_sibling("span")
+                if isinstance(span_tag, Tag):
+                    manga.status = span_tag.get_text(strip=True)
+            
             # Set author
-            if "Author:" in label_text:
+            elif "Author:" in label_text:
                 author_link = row.find("a")
                 if isinstance(author_link, Tag):
                     manga.author = author_link.get_text(strip=True)
@@ -187,7 +134,14 @@ def parse_manga_details(soup: BeautifulSoup, manga_url: str) -> Manga:
                 genre_links = row.find_all("a")
                 if genre_links:
                     manga.genres = [link.get_text(strip=True) for link in genre_links]
-
+            
+            # Set alternative
+            elif "Alternative:" in label_text:
+                alternatives_text = row.get_text(strip=True)
+                if alternatives_text:
+                    alternatives = alternatives_text.replace("Alternative:", "").split("; ")
+                    manga.alternatives = [alt.strip() for alt in alternatives]
+    
     # Set summary
     summary_div = soup.select_one("div.manga_summary")
     if isinstance(summary_div, Tag):
