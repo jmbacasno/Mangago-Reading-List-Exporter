@@ -7,8 +7,10 @@ class Manga:
     url: Optional[str] = None
     author: Optional[str] = None
     genres: List[str] = field(default_factory=list)
-    cover_url: Optional[str] = None
+    alternatives: List[str] = field(default_factory=list)
     summary: Optional[str] = None
+    status: Optional[str] = None
+    cover_url: Optional[str] = None
 
     def __str__(self):
         if self.author:
@@ -18,9 +20,9 @@ class Manga:
 @dataclass
 class MangaListEntry:
     title: Optional[str] = None
-    url: Optional[str] = None
-    comment: Optional[str] = None
     manga: Optional[Manga] = None
+    manga_url: Optional[str] = None
+    comment: Optional[str] = None
 
 @dataclass
 class MangaList:
@@ -30,8 +32,8 @@ class MangaList:
     creation_date: Optional[str] = None
     description: Optional[str] = None
     tags: List[str] = field(default_factory=list)
+    pages: Optional[int] = 1
     entries: List[MangaListEntry] = field(default_factory=list)
 
     def __str__(self):
         return f"{self.title} by {self.creator} with {len(self.entries)} entries"
-    
