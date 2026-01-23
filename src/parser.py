@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup, Tag
 from selenium import webdriver
 
 from .models import Manga, MangaListEntry, MangaList
+from .utils import get_date_from_manga_list_timestamp
 
 MANGA_LIST_URL_WITH_PAGE = "https://www.mangago.me/home/mangalist/{manga_list_code}/?filter=&page={page_no}"
 
@@ -76,15 +77,22 @@ def parse_manga_list_entries(soup: BeautifulSoup):
 
         manga_link = manga_div.select_one("div.comment").find("a")
         if isinstance(manga_link, Tag):
-            # Set title
-            manga_list_entry.title = manga_link.get_text(strip=True)
-            # Set manga url
-            manga_list_entry.manga_url = manga_link.get("href")
+            # Set url
+            manga_list_entry.url = manga_link.get("href")
 
         # Set comment
         blockquote_div = manga_div.find("blockquote")
         if isinstance(blockquote_div, Tag):
             manga_list_entry.comment = blockquote_div.get_text(separator="\n", strip=True)
+        
+        # Set add date
+        mangalist_item_ft_div = manga_div.select_one("div.mangalist_item_ft.clear")
+        if isinstance(mangalist_item_ft_div, Tag):
+            left_div = mangalist_item_ft_div.find(attrs={"class": "left", "style": "color:#BDBDBD"})
+            if isinstance(left_div, Tag):
+                date_text = left_div.get_text(strip=True)
+                if date_text:
+                    manga_list_entry.add_date = get_date_from_manga_list_timestamp(date_text)
         
         manga_list_entries.append(manga_list_entry)
 
