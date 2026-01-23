@@ -24,7 +24,7 @@ def get_manga(driver: webdriver.Chrome, url: str) -> Manga:
     return manga
 
 def set_manga_for_manga_list_entry(driver: webdriver.Chrome, manga_list_entry: MangaListEntry):
-    manga = get_manga(driver, manga_list_entry.manga_url)
+    manga = get_manga(driver, manga_list_entry.url)
     manga_list_entry.manga = manga
 
 def parse_manga_list_info(soup: BeautifulSoup):

@@ -81,10 +81,10 @@ def app_assign_manga_to_manga_list_entries(console: Console, manga_list: MangaLi
         with Progress(SpinnerColumn(), TextColumn("Preparing manga details..."), BarColumn(), console=console) as progress:
             task = progress.add_task("Fetching details...", total=len(manga_list.entries))
             for manga_list_entry in manga_list.entries:
-                driver.get(manga_list_entry.manga_url)
+                driver.get(manga_list_entry.url)
                 manga_soup = BeautifulSoup(driver.page_source, "html.parser")
                 manga = parse_manga(manga_soup)
-                manga.url = manga_list_entry.manga_url
+                manga.url = manga_list_entry.url
                 manga_list_entry.manga = manga
 
                 progress.update(task, advance=1)
