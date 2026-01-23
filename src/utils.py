@@ -14,7 +14,7 @@ def manga_list_custom_csv_dict(manga_list: MangaList) -> dict:
         entry["manga_author"] = manga_list_entry.manga.author if manga_list_entry.manga else None
         entry["manga_genres"] = manga_list_entry.manga.genres if manga_list_entry.manga else None
         entry["manga_alternatives"] = manga_list_entry.manga.alternatives if manga_list_entry.manga else None
-        entry["manga_summary"] = manga_list_entry.manga.summary.replace("\n", " ") if manga_list_entry.manga else None
+        entry["manga_summary"] = manga_list_entry.manga.summary.replace("\n", " ") if manga_list_entry.manga and manga_list_entry.manga.summary else None
         entry["manga_status"] = manga_list_entry.manga.status if manga_list_entry.manga else None
         entry["manga_released_year"] = manga_list_entry.manga.released_year if manga_list_entry.manga else None
         entry["manga_rating"] = manga_list_entry.manga.rating if manga_list_entry.manga else None
