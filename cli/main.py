@@ -8,7 +8,7 @@ from rich.table import Table
 from rich.prompt import Prompt, Confirm
 from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn
 
-# Add src to path so we can import our modules
+# Add src to path to import modules
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 CURRENT_DIR = Path.cwd()
@@ -110,8 +110,8 @@ def main():
     while True:
         try:
             console.print("\n[bold]Options:[/bold]")
-            console.print("1. Export")
-            console.print("2. Exit")
+            console.print("1. Export reading list by code")
+            console.print("2. Quit program")
             
             choice = Prompt.ask("\n[bold green]Choose an option[/bold green]", choices=["1", "2"])
             
