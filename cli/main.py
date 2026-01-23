@@ -149,10 +149,12 @@ def main():
                     continue
                 
                 console.print("\n[bold]Export Options:[/bold]")
-                console.print("1. Export to JSON")
-                console.print("2. Export to CSV")
+                console.print("1. Export to JSON only")
+                console.print("2. Export to CSV only")
+                console.print("3. Export to both JSON and CSV")
+                console.print("4. Back to main menu")
 
-                user_input = Prompt.ask("\n[bold green]Choose an option[/bold green]", choices=["1", "2"])
+                user_input = Prompt.ask("\n[bold green]Choose an option[/bold green]", choices=["1", "2", "3", "4"])
 
                 if user_input == "1":
                     with console.status("[bold green]Searching for manga details", spinner="dots"):
@@ -172,6 +174,22 @@ def main():
                         export_manga_list_to_csv(full_manga_list, SAVE_PATH_CSV)
                     
                     console.print("\n[green]Success! Export file saved to 'saves/csv' folder[/green].")
+                    continue
+
+                elif user_input == "3":
+                    with console.status("[bold green]Searching for manga details", spinner="dots"):
+                        full_manga_list = app_assign_manga_to_manga_list_entries(console, manga_list)
+                    
+                    with console.status("[bold green]Exporting to JSON...", spinner="dots"):
+                        export_manga_list_to_json(full_manga_list, SAVE_PATH_JSON)
+                    
+                    with console.status("[bold green]Exporting to CSV...", spinner="dots"):
+                        export_manga_list_to_csv(full_manga_list, SAVE_PATH_CSV)
+                    
+                    console.print("\n[green]Success! Export files saved to 'saves/json' and 'saves/csv' folders[/green].")
+                    continue
+                
+                elif user_input == "4":
                     continue
             
             elif choice == "2":
