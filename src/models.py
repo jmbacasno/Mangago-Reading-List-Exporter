@@ -33,6 +33,7 @@ class MangaList:
     url: Optional[str] = None
     creator: Optional[str] = None
     creation_date: Optional[str] = None
+    last_update: Optional[str] = None
     description: Optional[str] = None
     tags: List[str] = field(default_factory=list)
     pages: Optional[int] = 1
