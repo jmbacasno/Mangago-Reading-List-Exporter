@@ -22,10 +22,10 @@ class Manga:
 
 @dataclass
 class MangaListEntry:
-    title: Optional[str] = None
     manga: Optional[Manga] = None
-    manga_url: Optional[str] = None
+    url: Optional[str] = None
     comment: Optional[str] = None
+    add_date: Optional[str] = None
 
 @dataclass
 class MangaList:
