@@ -5,13 +5,16 @@ from typing import List, Optional
 class Manga:
     title: Optional[str] = None
     url: Optional[str] = None
+    cover_url: Optional[str] = None
     author: Optional[str] = None
     genres: List[str] = field(default_factory=list)
     alternatives: List[str] = field(default_factory=list)
     summary: Optional[str] = None
     status: Optional[str] = None
-    cover_url: Optional[str] = None
-
+    released_year: Optional[int] = None
+    rating: Optional[float] = None
+    votes: Optional[int] = None
+    
     def __str__(self):
         if self.author:
             return f"{self.title} by {self.author}"
