@@ -44,9 +44,13 @@ def parse_manga_list_info(soup: BeautifulSoup):
         creator_elem = user_profile_div.find("h2")
         if isinstance(creator_elem, Tag):
             manga_list.creator = creator_elem.get_text(strip=True)
-        # Set creation date
-        creation_elem = user_profile_div.get_text(strip=True)
-        manga_list.creation_date = re.compile(r"Create: (?P<creation_date>\d{4}-\d{2}-\d{2})").search(creation_elem).group("creation_date")
+        
+        info_text = user_profile_div.get_text(strip=True)
+        if info_text:
+            # Set creation date
+            manga_list.creation_date = re.compile(r"Create: (?P<creation_date>\d{4}-\d{2}-\d{2})").search(info_text).group("creation_date")
+            # Set last update
+            manga_list.last_update = re.compile(r"Last update: (?P<last_update>\d{4}-\d{2}-\d{2})").search(info_text).group("last_update")
     
     # Set description
     description_div = soup.select_one("div.description")
