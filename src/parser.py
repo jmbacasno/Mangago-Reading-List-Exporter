@@ -128,6 +128,12 @@ def parse_manga(soup: BeautifulSoup):
                 author_link = row.find("a")
                 if isinstance(author_link, Tag):
                     manga.author = author_link.get_text(strip=True)
+                author_text = row.get_text(strip=True)
+                # Set released year
+                if author_text:
+                    released_text = re.search(r"(?P<year>\d{4}) released.", author_text)
+                    if released_text:
+                        manga.released_year = int(released_text.group("year"))
             
             # Set genres
             elif "Genre(s):" in label_text:
@@ -141,6 +147,21 @@ def parse_manga(soup: BeautifulSoup):
                 if alternatives_text:
                     alternatives = alternatives_text.replace("Alternative:", "").split("; ")
                     manga.alternatives = [alt.strip() for alt in alternatives]
+    
+    # Set rating
+    rating_span = soup.select_one("span.rating_num")
+    if isinstance(rating_span, Tag):
+        manga.rating = rating_span.get_text(strip=True)
+        if manga.rating:
+            manga.rating = round(float(manga.rating), 1)
+        # Set votes
+        votes_link = rating_span.find_next_sibling("a")
+        if isinstance(votes_link, Tag):
+            votes_text = votes_link.get_text(strip=True)
+            if votes_text:
+                votes_num = re.search(r"(?P<votes>\d+)", votes_text)
+                if votes_num:
+                    manga.votes = int(votes_num.group("votes"))
     
     # Set summary
     summary_div = soup.select_one("div.manga_summary")
